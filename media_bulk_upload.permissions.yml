@@ -1,7 +1,6 @@
-upload media:
-  title: 'Upload media'
-  description: "Allow to access and use the upload form (don't forget to set DropzoneJS permissions accordingly)"
-
 administer media_bulk_upload configuration:
   title: 'Configure Media Upload form'
   description: 'Allow to configure the media upload form'
+
+permission_callbacks:
+  - \Drupal\media_bulk_upload\MediaBulkConfigPermissions::mediaBulkConfigPermissions
