@@ -23,7 +23,8 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *     },
  *   },
  *   config_prefix = "media_bulk_config",
- *   admin_permission = "administer site configuration",
+ *   admin_permission = "administer media_bulk_upload configuration",
+ *   permission_granularity = "bundle",
  *   entity_keys = {
  *     "id" = "id",
  *     "label" = "label",

@@ -4,7 +4,7 @@ media_bulk_upload.upload_form:
     _form: '\Drupal\media_bulk_upload\Form\MediaBulkUploadForm'
     _title: 'Multiple upload'
   requirements:
-    _permission: 'upload media'
+    _custom_access: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::accessForm'
   options:
     _admin_route: TRUE
     parameters:
@@ -17,6 +17,6 @@ media_bulk_upload.list:
     _title: 'Bulk upload media'
     _controller: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::list'
   requirements:
-    _permission: 'upload media'
+    _custom_access: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::accessList'
   options:
     _admin_route: TRUE

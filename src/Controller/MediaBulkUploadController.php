@@ -2,10 +2,14 @@
 
 namespace Drupal\media_bulk_upload\Controller;
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Render\RendererInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Url;
+use Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -101,6 +105,53 @@ class MediaBulkUploadController extends ControllerBase {
     }
 
     return $build;
+  }
+
+  /**
+   * Access callback to validate if the user has access to the upload form list.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   User to validate access on.
+   *
+   * @return \Drupal\Core\Access\AccessResultAllowed|\Drupal\Core\Access\AccessResultForbidden
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   */
+  public function accessList(AccountInterface $account) {
+
+    $mediaBulkConfigStorage = $this->entityTypeManager->getStorage('media_bulk_config');
+    $mediaBulkConfigEntities = $mediaBulkConfigStorage->loadMultiple();
+    foreach ($mediaBulkConfigEntities as $mediaBulkConfig) {
+      $url = Url::fromRoute('media_bulk_upload.upload_form', ['media_bulk_config' => $mediaBulkConfig]);
+      if ($url->access()) {
+        return AccessResult::allowed();
+      }
+    }
+
+    // Check permissions and combine that with any custom access checking needed. Pass forward
+    // parameters from the route and/or request as needed.
+    return AccessResult::forbidden('No media bulk config entity accessible for the user.');
+  }
+
+  /**
+   * Access callback to validate if the user has access to a bulk upload form.
+   *
+   * @param \Drupal\Core\Session\AccountInterface $account
+   *   User to validate access on.
+   * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface $media_bulk_config
+   *   The media bulk config entity the upload form belongs to.
+   *
+   * @return \Drupal\Core\Access\AccessResultAllowed|\Drupal\Core\Access\AccessResultForbidden
+   */
+  public function accessForm(AccountInterface $account, MediaBulkConfigInterface $media_bulk_config) {
+    // Check permissions and combine that with any custom access checking needed. Pass forward
+    // parameters from the route and/or request as needed.
+    $mediaBulkConfigId = $media_bulk_config->id();
+
+    if(!$account->hasPermission("use $mediaBulkConfigId bulk upload form")) {
+      return AccessResult::forbidden('Media Bulk Upload form is not accessible for the user.');
+    }
+
+    return AccessResult::allowed();
   }
 
 }
