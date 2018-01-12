@@ -1,0 +1,106 @@
+<?php
+
+namespace Drupal\media_bulk_upload\Controller;
+
+use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Render\RendererInterface;
+use Symfony\Component\DependencyInjection\ContainerInterface;
+
+/**
+ * Class MediaUploadController.
+ *
+ * @package Drupal\media_upload\Controller
+ */
+class MediaBulkUploadController extends ControllerBase {
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * The renderer.
+   *
+   * @var \Drupal\Core\Render\RendererInterface
+   */
+  protected $renderer;
+
+  /**
+   * Constructs a new MediaBulkUploadController.
+   *
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   * @param \Drupal\Core\Render\RendererInterface $renderer
+   *   The renderer.
+   */
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, RendererInterface $renderer) {
+    $this->entityTypeManager = $entity_type_manager;
+    $this->renderer = $renderer;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container) {
+    return new static(
+      $container->get('entity_type.manager'),
+      $container->get('renderer')
+    );
+  }
+
+  /**
+   * Displays add links for the available bundles.
+   *
+   * Redirects to the add form if there's only one bundle available.
+   *
+   * @return \Symfony\Component\HttpFoundation\RedirectResponse|array
+   *   If there's only one available bundle, a redirect response.
+   *   Otherwise, a render array with the add links for each bundle.
+   * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
+   */
+  public function list() {
+    $build = [
+      '#theme' => 'entity_add_list',
+      '#bundles' => [],
+    ];
+    $entity_type = $this->entityTypeManager->getDefinition('media_bulk_config');
+    $entity_type_label = $entity_type->getLowercaseLabel();
+    $build['#cache']['tags'] = $entity_type->getListCacheTags();
+
+    $link_text = $this->t('Add a new @entity_type.', ['@entity_type' => $entity_type_label]);
+    $link_route_name = 'entity.' . $entity_type->id() . '.add_form';
+    $build['#add_bundle_message'] = $this->t('There is no @entity_type yet. @add_link', [
+      '@entity_type' => $entity_type_label,
+      '@add_link' => Link::createFromRoute($link_text, $link_route_name)
+        ->toString(),
+    ]);
+
+    $mediaBulkConfigStorage = $this->entityTypeManager->getStorage('media_bulk_config');
+    $mediaBulkConfigEntities = $mediaBulkConfigStorage->loadMultiple();
+
+    $form_route_name = 'media_bulk_upload.upload_form';
+    if (count($mediaBulkConfigEntities) == 1) {
+      $mediaBulkConfigEntity = reset($mediaBulkConfigEntities);
+      return $this->redirect($form_route_name, ['media_bulk_config' => $mediaBulkConfigEntity->id()]);
+    }
+
+    foreach ($mediaBulkConfigEntities as $mediaBulkConfigEntity) {
+      $link = Link::createFromRoute($mediaBulkConfigEntity->label(), $form_route_name, ['media_bulk_config' => $mediaBulkConfigEntity->id()]);
+      if (!$link->getUrl()->access()) {
+        continue;
+      }
+
+      $build['#bundles'][$mediaBulkConfigEntity->id()] = [
+        'label' => $mediaBulkConfigEntity->label(),
+        'add_link' => Link::createFromRoute($mediaBulkConfigEntity->label(), $form_route_name, ['media_bulk_config' => $mediaBulkConfigEntity->id()]),
+      ];
+    }
+
+    return $build;
+  }
+
+}
