@@ -204,6 +204,8 @@ class MediaSubFormManager implements ContainerInjectionInterface {
    *   The media form display to get the field widgets from.
    */
   public function getMediaFormDisplay(MediaTypeInterface $mediaType) {
+    //TODO: This should'nt be done on a "magic" id but based on the form mode
+    // selected in the media bulk config entity
     /** @var \Drupal\Core\Entity\Display\EntityFormDisplayInterface $mediaFormDisplay */
     $mediaFormDisplay = $this->entityFormDisplayStorage->load('media.' . $mediaType->id() . '.bulk_upload');
     if (is_null($mediaFormDisplay)) {
