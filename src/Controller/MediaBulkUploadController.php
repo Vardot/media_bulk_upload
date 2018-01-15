@@ -66,7 +66,7 @@ class MediaBulkUploadController extends ControllerBase {
    *   Otherwise, a render array with the add links for each bundle.
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    */
-  public function list() {
+  public function addLinksList() {
     $build = [
       '#theme' => 'entity_add_list',
       '#bundles' => [],
@@ -127,8 +127,6 @@ class MediaBulkUploadController extends ControllerBase {
       }
     }
 
-    // Check permissions and combine that with any custom access checking needed. Pass forward
-    // parameters from the route and/or request as needed.
     return AccessResult::forbidden('No media bulk config entity accessible for the user.');
   }
 
@@ -143,9 +141,7 @@ class MediaBulkUploadController extends ControllerBase {
    * @return \Drupal\Core\Access\AccessResultAllowed|\Drupal\Core\Access\AccessResultForbidden
    */
   public function accessForm(AccountInterface $account, MediaBulkConfigInterface $media_bulk_config) {
-    // Check permissions and combine that with any custom access checking needed. Pass forward
-    // parameters from the route and/or request as needed.
-    $mediaBulkConfigId = $media_bulk_config->id();
+        $mediaBulkConfigId = $media_bulk_config->id();
 
     if(!$account->hasPermission("use $mediaBulkConfigId bulk upload form")) {
       return AccessResult::forbidden('Media Bulk Upload form is not accessible for the user.');

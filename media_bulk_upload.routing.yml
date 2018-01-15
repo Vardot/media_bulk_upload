@@ -15,7 +15,7 @@ media_bulk_upload.list:
   path: '/media/bulk-upload'
   defaults:
     _title: 'Bulk upload media'
-    _controller: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::list'
+    _controller: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::addLinksList'
   requirements:
     _custom_access: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::accessList'
   options:

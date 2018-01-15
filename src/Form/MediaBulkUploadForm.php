@@ -21,13 +21,6 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class MediaBulkUploadForm extends FormBase {
 
   /**
-   * Default max file size.
-   *
-   * @var string
-   */
-  protected $defaultMaxFileSize = '32MB';
-
-  /**
    * Media Type storage.
    *
    * @var \Drupal\Core\Entity\EntityStorageInterface
@@ -56,6 +49,20 @@ class MediaBulkUploadForm extends FormBase {
   protected $mediaSubFormManager;
 
   /**
+   * The max file size for the media bulk form.
+   *
+   * @var string
+   */
+  protected $maxFileSizeForm;
+
+  /**
+   * The allowed extensions for the media bulk form.
+   *
+   * @var array
+   */
+  protected $allowed_extensions = [];
+
+  /**
    * BulkMediaUploadForm constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
@@ -72,7 +79,7 @@ class MediaBulkUploadForm extends FormBase {
     $this->mediaTypeStorage = $entityTypeManager->getStorage('media_type');
     $this->mediaBulkConfigStorage = $entityTypeManager->getStorage('media_bulk_config');
     $this->mediaStorage = $entityTypeManager->getStorage('media');
-    $this->defaultMaxFileSize = format_size(file_upload_max_size())->render();
+    $this->maxFileSizeForm = format_size(file_upload_max_size())->render();
     $this->mediaSubFormManager = $mediaSubFormManager;
   }
 
@@ -104,6 +111,7 @@ class MediaBulkUploadForm extends FormBase {
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
    * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface|null $media_bulk_config
+   *   The media bulk configuration entity.
    *
    * @return array
    *   The form structure.
@@ -115,20 +123,20 @@ class MediaBulkUploadForm extends FormBase {
 
     /** @var \Drupal\media\MediaTypeInterface[] $mediaTypes */
     $mediaTypes = $this->mediaTypeStorage->loadMultiple($mediaTypeIds);
-    $extensions = [];
     $mediaFormFieldComponents = [];
-    $maxFileSize = $this->defaultMaxFileSize;
 
     foreach ($mediaTypes as $mediaType) {
       $targetFieldSettings = $this->mediaSubFormManager->getTargetFieldSettings($mediaType);
-      $extensions = array_merge($extensions, $this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings));
-      $maxFileSize = $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings, $maxFileSize);
+      $this->addAllowedExtensions($this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings));
       $mediaFormFieldComponents[$mediaType->id()] = $this->mediaSubFormManager->getMediaEntityFieldCompents($mediaType);
+      if (!$this->isMaxFileSizeLarger($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings))) {
+        continue;
+      }
+
+      $this->setMaxFileSizeForm($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings));
     }
 
-    $extensions = array_unique($extensions);
-
-    return $this->setupForm($form, $form_state, $mediaBulkConfig, $extensions, $maxFileSize, $mediaFormFieldComponents);
+    return $this->setupForm($form, $form_state, $mediaBulkConfig, $mediaFormFieldComponents);
   }
 
   /**
@@ -150,7 +158,7 @@ class MediaBulkUploadForm extends FormBase {
    * @return array
    *   Render array containing the form fields.
    */
-  private function setupForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $mediaBulkConfig, array $extensions, $maxFileSize, array $mediaFormFieldComponents) {
+  private function setupForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $mediaBulkConfig, array $mediaFormFieldComponents) {
     $form['#tree'] = TRUE;
     $form['information_wrapper'] = [
       '#type' => 'container',
@@ -173,10 +181,10 @@ class MediaBulkUploadForm extends FormBase {
     ];
 
     $information = '<p>' . $this->t('Allowed extensions: @allowedExtensions', [
-        '@allowedExtensions' => implode(', ', $extensions),
+        '@allowedExtensions' => implode(', ', $this->allowed_extensions),
       ]) . '</p>';
     $information .= '<p>' . $this->t('Maximum file size for each file: @maxFileSize', [
-        '@maxFileSize' => $maxFileSize,
+        '@maxFileSize' => $this->maxFileSizeForm,
       ]) . '</p>';
 
     $form['information_wrapper']['information'] = [
@@ -203,8 +211,8 @@ class MediaBulkUploadForm extends FormBase {
       '#title' => $this->t('Dropzone'),
       '#required' => TRUE,
       '#dropzone_description' => $this->t('Click or drop your files here'),
-      '#max_filesize' => $maxFileSize,
-      '#extensions' => implode(' ', $extensions),
+      '#max_filesize' => $this->maxFileSizeForm,
+      '#extensions' => implode(' ', $this->allowed_extensions),
     ];
 
 
@@ -238,9 +246,6 @@ class MediaBulkUploadForm extends FormBase {
    *   The form render array.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
-   *
-   * @throws \Drupal\Core\Entity\EntityStorageException
-   * @throws \Exception
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $values = $form_state->getValues();
@@ -354,9 +359,11 @@ class MediaBulkUploadForm extends FormBase {
   private function getMediaTypeIdByExtension(array $fileInfo, array $targetFieldSettings) {
     foreach ($targetFieldSettings as $mediaTypeId => $settings) {
       $extensions = $this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings[$mediaTypeId]);
-      if (in_array($fileInfo['extension'], $extensions)) {
-        return $mediaTypeId;
+      if (!in_array($fileInfo['extension'], $extensions)) {
+        continue;
       }
+
+      return $mediaTypeId;
     }
     throw new \Exception('No matching media type id for the given file.');
   }
@@ -408,4 +415,31 @@ class MediaBulkUploadForm extends FormBase {
     }
   }
 
+  /**
+   * Validate if a max file size is bigger then the current max file size.
+   *
+   * @param string $MaxFileSize
+   *
+   * @return bool
+   */
+  private function isMaxFileSizeLarger($MaxFileSize) {
+    return ($MaxFileSize > $this->maxFileSizeForm);
+  }
+
+  /**
+   * Set the max File size for the form.
+   *
+   * @param string $newMaxFileSize
+   */
+  private function setMaxFileSizeForm($newMaxFileSize) {
+    $this->maxFileSizeForm = $newMaxFileSize;
+
+  }
+
+  /**
+   * @param array $extensions
+   */
+  private function addAllowedExtensions($extensions) {
+    $this->allowed_extensions = array_unique(array_merge($this->allowed_extensions, $extensions));
+  }
 }

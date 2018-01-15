@@ -13,7 +13,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class MediaBulkConfigForm extends EntityForm {
 
   /**
-   * Entity Display Repository
+   * Entity Display Repository.
    *
    * @var \Drupal\Core\Entity\EntityDisplayRepositoryInterface
    */
@@ -39,6 +39,7 @@ class MediaBulkConfigForm extends EntityForm {
 
     /** @var \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface $mediaBulkConfig */
     $mediaBulkConfig = $this->entity;
+
     $form['label'] = [
       '#type' => 'textfield',
       '#title' => $this->t('Label'),
@@ -57,14 +58,6 @@ class MediaBulkConfigForm extends EntityForm {
       '#disabled' => !$mediaBulkConfig->isNew(),
     ];
 
-    $mediaTypeStorage = $this->entityTypeManager->getStorage('media_type');
-    $mediaTypes = $mediaTypeStorage->loadMultiple();
-    $mediaTypeOptions = [];
-    foreach ($mediaTypes as $mediaType) {
-      $mediaTypeOptions[$mediaType->id()] = $mediaType->label();
-    }
-    natsort($mediaTypeOptions);
-
     $form['media_types'] = [
       '#type' => 'checkboxes',
       '#title' => $this->t('Media Types'),
@@ -73,13 +66,11 @@ class MediaBulkConfigForm extends EntityForm {
         aware that if file extensions overlap between the media types that are 
         chosen, that the media entity will be assigned automatically to one of 
         these types.'),
-      '#options' => $mediaTypeOptions,
+      '#options' => $this->getMediaTypeOptions(),
       '#default_value' => $mediaBulkConfig->get('media_types'),
       '#size' => 20,
       '#multiple' => TRUE,
     ];
-
-    $formModeOptions = $this->entityDisplayRepository->getFormModeOptions('media');
 
     $form['form_mode'] = [
       '#type' => 'select',
@@ -87,12 +78,27 @@ class MediaBulkConfigForm extends EntityForm {
       '#description' => $this->t('Based on the form mode the upload form 
         can be enriched with fields that are available, improving the speed and 
         usability to add (meta)data to your media entities.'),
-      '#options' => $formModeOptions,
+      '#options' => $this->entityDisplayRepository->getFormModeOptions('media'),
       "#empty_option" => t('- None -'),
       '#default_value' => $mediaBulkConfig->get('form_mode'),
     ];
 
     return $form;
+  }
+
+  /**
+   * Get the available media type options.
+   */
+  private function getMediaTypeOptions() {
+    $mediaTypeStorage = $this->entityTypeManager->getStorage('media_type');
+    $mediaTypes = $mediaTypeStorage->loadMultiple();
+
+    foreach ($mediaTypes as $mediaType) {
+      $mediaTypeOptions[$mediaType->id()] = $mediaType->label();
+    }
+    natsort($mediaTypeOptions);
+
+    return $mediaTypeOptions;
   }
 
   /**
@@ -102,18 +108,18 @@ class MediaBulkConfigForm extends EntityForm {
     $media_bulk_config = $this->entity;
     $status = $media_bulk_config->save();
 
-    switch ($status) {
-      case SAVED_NEW:
-        drupal_set_message($this->t('Created the %label Media Bulk Config.', [
-          '%label' => $media_bulk_config->label(),
-        ]));
-        break;
+    $save_message = $this->t('Saved the %label Media Bulk Config.', [
+      '%label' => $media_bulk_config->label(),
+    ]);
 
-      default:
-        drupal_set_message($this->t('Saved the %label Media Bulk Config.', [
-          '%label' => $media_bulk_config->label(),
-        ]));
+    if ($status == SAVED_NEW) {
+      $save_message = $this->t('Created the %label Media Bulk Config.', [
+        '%label' => $media_bulk_config->label(),
+      ]);
     }
+
+    drupal_set_message($save_message);
+
     $form_state->setRedirectUrl($media_bulk_config->toUrl('collection'));
   }
 

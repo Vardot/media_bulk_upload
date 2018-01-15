@@ -323,18 +323,14 @@ class MediaSubFormManager implements ContainerInjectionInterface {
    *
    * @param array $targetFieldSettings
    *   Target field settings for a media type.
-   * @param string $maxFileSize
-   *   Maximum current file size to compare with.
    *
    * @return string
    *
    */
-  public function getTargetFieldMaxSize(array $targetFieldSettings, $maxFileSize) {
-    if ($targetFieldSettings['max_filesize'] > $maxFileSize) {
-      return $targetFieldSettings['max_filesize'];
-    }
-    return $maxFileSize;
+  public function getTargetFieldMaxSize(array $targetFieldSettings) {
+    return $targetFieldSettings['max_filesize'];
   }
+
 
   /**
    * Get the field components for the given media type.
@@ -350,5 +346,4 @@ class MediaSubFormManager implements ContainerInjectionInterface {
     $fieldComponents = $mediaFormDisplay->getComponents();
     return array_keys($fieldComponents);
   }
-
 }
