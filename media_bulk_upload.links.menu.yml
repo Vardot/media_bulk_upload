@@ -1,5 +1,5 @@
-media_bulk_upload.config_entity:
+entity.media_bulk_upload.collection:
   title: 'Media Bulk Upload'
   description: 'Configure media bulk upload forms.'
   parent: system.admin_config_media
-  route_name: entity.media_bulk_config.collection
+  route_name: entity.media_bulk_upload.collection

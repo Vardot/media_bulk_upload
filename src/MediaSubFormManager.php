@@ -341,7 +341,7 @@ class MediaSubFormManager implements ContainerInjectionInterface {
    * @return array
    *   List of field components.
    */
-  public function getMediaEntityFieldCompents(MediaTypeInterface $mediaType) {
+  public function getMediaEntityFieldComponents(MediaTypeInterface $mediaType) {
     $mediaFormDisplay = $this->getMediaFormDisplay($mediaType);
     $fieldComponents = $mediaFormDisplay->getComponents();
     return array_keys($fieldComponents);

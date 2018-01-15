@@ -117,6 +117,9 @@ class MediaBulkUploadController extends ControllerBase {
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    */
   public function accessList(AccountInterface $account) {
+    if ($account->hasPermission('administer media_bulk_upload configuration')) {
+      return AccessResult::allowed();
+    }
 
     $mediaBulkConfigStorage = $this->entityTypeManager->getStorage('media_bulk_config');
     $mediaBulkConfigEntities = $mediaBulkConfigStorage->loadMultiple();

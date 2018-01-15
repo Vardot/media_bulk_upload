@@ -128,7 +128,7 @@ class MediaBulkUploadForm extends FormBase {
     foreach ($mediaTypes as $mediaType) {
       $targetFieldSettings = $this->mediaSubFormManager->getTargetFieldSettings($mediaType);
       $this->addAllowedExtensions($this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings));
-      $mediaFormFieldComponents[$mediaType->id()] = $this->mediaSubFormManager->getMediaEntityFieldCompents($mediaType);
+      $mediaFormFieldComponents[$mediaType->id()] = $this->mediaSubFormManager->getMediaEntityFieldComponents($mediaType);
       if (!$this->isMaxFileSizeLarger($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings))) {
         continue;
       }
