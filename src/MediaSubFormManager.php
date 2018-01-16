@@ -122,10 +122,12 @@ class MediaSubFormManager implements ContainerInjectionInterface {
    *   Render array containing the form elements.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
+   * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface $mediaBulkConfig
+   *   The media bulk config entity.
    * @param array $mediaFormFieldComponents
    *   List of field components keyed by media type id.
    */
-  public function buildMediaSubForm(array &$form, FormStateInterface $form_state, array $mediaFormFieldComponents) {
+  public function buildMediaSubForm(array &$form, FormStateInterface $form_state, MediaBulkConfigInterface $mediaBulkConfig, array $mediaFormFieldComponents) {
     $baseFieldNames = reset($mediaFormFieldComponents);
     $mediaTypeId = key($mediaFormFieldComponents);
     $sharedFormFieldNames = $this->getSharedFormFieldComponents($mediaFormFieldComponents, $baseFieldNames);
@@ -135,7 +137,7 @@ class MediaSubFormManager implements ContainerInjectionInterface {
 
     /** @var \Drupal\media\MediaInterface $dummyMedia */
     $dummyMedia = $this->mediaStorage->create(['bundle' => $mediaType->id()]);
-    $mediaFormDisplay = $this->getMediaFormDisplay($mediaType);
+    $mediaFormDisplay = $this->getMediaFormDisplay($mediaBulkConfig, $mediaType);
     $mediaFormDisplay->buildForm($dummyMedia, $form['fields']['shared'], $form_state);
 
     $storage = $form_state->getStorage();
@@ -198,15 +200,17 @@ class MediaSubFormManager implements ContainerInjectionInterface {
   /**
    * Get the media form display for the given media type.
    *
+   * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface $mediaBulkConfig
+   *   Media bulk config entity.
    * @param \Drupal\media\MediaTypeInterface $mediaType
    *   The media type.
    *
    * @return \Drupal\Core\Entity\Display\EntityFormDisplayInterface
    *   The media form display to get the field widgets from.
    */
-  public function getMediaFormDisplay(MediaTypeInterface $mediaType) {
+  public function getMediaFormDisplay(MediaBulkConfigInterface $mediaBulkConfig, MediaTypeInterface $mediaType) {
     /** @var \Drupal\Core\Entity\Display\EntityFormDisplayInterface $mediaFormDisplay */
-    $mediaFormDisplay = $this->entityFormDisplayStorage->load('media.' . $mediaType->id() . '.bulk_upload');
+    $mediaFormDisplay = $this->entityFormDisplayStorage->load($mediaBulkConfig->get('form_mode'));
     if (is_null($mediaFormDisplay)) {
       $mediaFormDisplay = $this->entityFormDisplayStorage->load('media.' . $mediaType->id() . '.default');
     }
@@ -338,14 +342,16 @@ class MediaSubFormManager implements ContainerInjectionInterface {
   /**
    * Get the field components for the given media type.
    *
+   * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface $mediaBulkConfig
+   *   The media bulk config entity.
    * @param \Drupal\media\MediaTypeInterface $mediaType
    *   The media type.
    *
    * @return array
    *   List of field components.
    */
-  public function getMediaEntityFieldComponents(MediaTypeInterface $mediaType) {
-    $mediaFormDisplay = $this->getMediaFormDisplay($mediaType);
+  public function getMediaEntityFieldComponents(MediaBulkConfigInterface $mediaBulkConfig, MediaTypeInterface $mediaType) {
+    $mediaFormDisplay = $this->getMediaFormDisplay($mediaBulkConfig, $mediaType);
     $fieldComponents = $mediaFormDisplay->getComponents();
     return array_keys($fieldComponents);
   }
