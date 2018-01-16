@@ -29,4 +29,14 @@ class MediaBulkConfigListBuilder extends ConfigEntityListBuilder {
     return $row + parent::buildRow($entity);
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function render() {
+    $build = parent::render();
+    $build['table']['#empty'] = $this->t('No media types available. <a href=":url">Add media type</a>.', [
+      ':url' => Url::fromRoute('entity.media_bulk_config.add_form')->toString(),
+    ]);
+    return $build;
+  }
 }

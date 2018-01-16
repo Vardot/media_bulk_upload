@@ -11,7 +11,7 @@ media_bulk_upload.upload_form:
       media_bulk_config:
         type: entity:media_bulk_config
 
-entity.media_bulk_upload.collection:
+media_bulk_upload.list:
   path: '/media/bulk-upload'
   defaults:
     _title: 'Bulk upload media'
@@ -21,8 +21,18 @@ entity.media_bulk_upload.collection:
   options:
     _admin_route: TRUE
 
+entity.media_bulk_config.collection:
+  path: '/admin/config/media/media-bulk-config'
+  defaults:
+    _entity_list: 'media_bulk_config'
+    _title: 'Bulk upload media'
+  requirements:
+    _custom_access: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::accessList'
+  options:
+    _admin_route: TRUE
+
 media_bulk_upload.add:
-  path: '/media/bulk-upload/add'
+  path: '/admin/config/media/bulk-upload/add'
   defaults:
     _entity_form: media_bulk_config.add
     _title: 'Add media bulk upload configuration'

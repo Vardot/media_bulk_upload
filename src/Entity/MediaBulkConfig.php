@@ -31,11 +31,11 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *     "uuid" = "uuid"
  *   },
  *   links = {
- *     "canonical" = "/admin/config/media/bulk-upload/{media_bulk_config}",
- *     "add-form" = "/admin/config/media/bulk-upload/add",
- *     "edit-form" = "/admin/config/media/bulk-upload/{media_bulk_config}/edit",
- *     "delete-form" = "/admin/config/media/bulk-upload/{media_bulk_config}/delete",
- *     "collection" = "/admin/config/media/bulk-upload"
+ *     "canonical" = "/admin/config/media/media-bulk-config/{media_bulk_config}",
+ *     "add-form" = "/admin/config/media/media-bulk-config/add",
+ *     "edit-form" = "/admin/config/media/media-bulk-config/{media_bulk_config}/edit",
+ *     "delete-form" = "/admin/config/media/media-bulk-config/{media_bulk_config}/delete",
+ *     "collection" = "/admin/config/media/media-bulk-config"
  *   }
  * )
  */
