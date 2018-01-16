@@ -110,7 +110,7 @@ class MediaBulkUploadForm extends FormBase {
    *   An associative array containing the structure of the form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The current state of the form.
-   * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface|null $mediaBulkConfig
+   * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface|null $media_bulk_config
    *   The media bulk configuration entity.
    *
    * @return array
@@ -118,7 +118,8 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @throws \Exception
    */
-  public function buildForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $mediaBulkConfig = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $media_bulk_config = NULL) {
+    $mediaBulkConfig = $media_bulk_config;
     $mediaTypeIds = $mediaBulkConfig->get('media_types');
 
     /** @var \Drupal\media\MediaTypeInterface[] $mediaTypes */
