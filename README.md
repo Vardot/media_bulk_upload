@@ -36,3 +36,4 @@ types in the configured bulk upoad form.
 
 ## Maintainers:
 + Jeffrey Bertoen (@jbertoen) drupal.org/u/jbertoen
++ Marnix van Balgooi (@mirnaxvb) drupal.org/u/mirnaxvb
