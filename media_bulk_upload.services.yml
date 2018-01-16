@@ -2,4 +2,3 @@ services:
   media_bulk_upload.subform_manager:
     class: Drupal\media_bulk_upload\MediaSubFormManager
     arguments: ['@entity_type.manager', '@entity_field.manager', '@token']
-      

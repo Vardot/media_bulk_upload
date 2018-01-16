@@ -19,6 +19,12 @@ class MediaBulkConfigForm extends EntityForm {
    */
   protected $entityDisplayRepository;
 
+  /**
+   * MediaBulkConfigForm constructor.
+   *
+   * @param \Drupal\Core\Entity\EntityDisplayRepositoryInterface $entityDisplayRepository
+   *   Entity Display repository.
+   */
   public function __construct(EntityDisplayRepositoryInterface $entityDisplayRepository) {
     $this->entityDisplayRepository = $entityDisplayRepository;
   }

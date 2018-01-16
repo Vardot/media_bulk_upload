@@ -14,7 +14,7 @@ use Drupal\Core\Utility\Token;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
- * Class MediaSubFormManager
+ * Class MediaSubFormManager.
  *
  * @package Drupal\media_bulk_upload
  */
@@ -118,11 +118,11 @@ class MediaSubFormManager implements ContainerInjectionInterface {
   /**
    * Get media entity form fields that are available in all given $mediaForms.
    *
-   * @param $form
+   * @param array $form
    *   Render array containing the form elements.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   The form state.
-   * @param $mediaFormFieldComponents
+   * @param array $mediaFormFieldComponents
    *   List of field components keyed by media type id.
    */
   public function buildMediaSubForm(array &$form, FormStateInterface $form_state, array $mediaFormFieldComponents) {
@@ -184,6 +184,7 @@ class MediaSubFormManager implements ContainerInjectionInterface {
    *   The name of the field to check upon.
    *
    * @return bool
+   *   If validation passes TRUE, otherwise FALSE.
    */
   public function validateSharedMediaFieldComponent(array $mediaFormFieldComponents, $fieldName) {
     foreach ($mediaFormFieldComponents as $formFieldComponents) {
@@ -226,8 +227,9 @@ class MediaSubFormManager implements ContainerInjectionInterface {
   }
 
   /**
-   * Configure the shared fields to have the correct parents and make all the
-   * fields optional.
+   * Configure all the shared fields.
+   *
+   * Will set all the correct parents and make all the fields optional.
    *
    * @param array $elements
    *   Form elements from the media type form.
@@ -318,19 +320,20 @@ class MediaSubFormManager implements ContainerInjectionInterface {
   }
 
   /**
-   * Get the maximum upload size for a file compared to the current
+   * Get the target maximum upload size.
+   *
+   * Gets the maximum upload size for a file compared to the current
    * $maxFileSize, from the target field settings.
    *
    * @param array $targetFieldSettings
    *   Target field settings for a media type.
    *
    * @return string
-   *
+   *   Returns the max filesize as a string..
    */
   public function getTargetFieldMaxSize(array $targetFieldSettings) {
     return $targetFieldSettings['max_filesize'];
   }
-
 
   /**
    * Get the field components for the given media type.

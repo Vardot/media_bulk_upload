@@ -115,6 +115,7 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @return array
    *   The form structure.
+   *
    * @throws \Exception
    */
   public function buildForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $media_bulk_config = NULL) {
@@ -148,10 +149,6 @@ class MediaBulkUploadForm extends FormBase {
    *   The form state.
    * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface $mediaBulkConfig
    *   The media bulk configuration entity.
-   * @param array $extensions
-   *   List of extensions that are allowed to upload.
-   * @param string $maxFileSize
-   *   Maximum file size allowed for uploading.
    * @param array $mediaFormFieldComponents
    *   List of field components keyed by media type id.
    *
@@ -181,11 +178,11 @@ class MediaBulkUploadForm extends FormBase {
     ];
 
     $information = '<p>' . $this->t('Allowed extensions: @allowedExtensions', [
-        '@allowedExtensions' => implode(', ', $this->allowed_extensions),
-      ]) . '</p>';
+      '@allowedExtensions' => implode(', ', $this->allowed_extensions),
+    ]) . '</p>';
     $information .= '<p>' . $this->t('Maximum file size for each file: @maxFileSize', [
-        '@maxFileSize' => $this->maxFileSizeForm,
-      ]) . '</p>';
+      '@maxFileSize' => $this->maxFileSizeForm,
+    ]) . '</p>';
 
     $form['information_wrapper']['information'] = [
       '#type' => 'html_tag',
@@ -220,8 +217,7 @@ class MediaBulkUploadForm extends FormBase {
       $form['fields'] = [
         '#type' => 'fieldset',
         '#title' => $this->t('Fields'),
-        'shared' => [
-        ],
+        'shared' => [],
       ];
       $this->mediaSubFormManager->buildMediaSubForm($form, $form_state, $mediaFormFieldComponents);
     }
@@ -280,7 +276,7 @@ class MediaBulkUploadForm extends FormBase {
         }
         $media->save();
       }
-      catch(\Exception $e) {
+      catch (\Exception $e) {
         watchdog_exception('media_bulk_upload', $e);
       }
     }
@@ -289,10 +285,11 @@ class MediaBulkUploadForm extends FormBase {
   }
 
   /**
-   * Process a file upload to create a file entity and prepare a media entity
-   * with data.
+   * Process a file upload.
    *
-   * @param MediaTypeInterface[] $mediaTypes
+   * Will create a file entity and prepare a media entity with data.
+   *
+   * @param array $mediaTypes
    *   List of media types.
    * @param array $file
    *   File upload data.
@@ -328,8 +325,7 @@ class MediaBulkUploadForm extends FormBase {
   }
 
   /**
-   * Validate if the filename and extension are valid in the available file
-   * info.
+   * Validate if the filename and extension are valid in the provided file info.
    *
    * @param array $fileInfo
    *   File info.

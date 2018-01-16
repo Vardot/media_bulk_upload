@@ -64,6 +64,7 @@ class MediaBulkUploadController extends ControllerBase {
    * @return \Symfony\Component\HttpFoundation\RedirectResponse|array
    *   If there's only one available bundle, a redirect response.
    *   Otherwise, a render array with the add links for each bundle.
+   *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    */
   public function addLinksList() {
