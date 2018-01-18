@@ -4,6 +4,7 @@ namespace Drupal\media_bulk_upload;
 
 use Drupal\Core\Config\Entity\ConfigEntityListBuilder;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Url;
 
 /**
  * Provides a listing of Media Bulk Config entities.
