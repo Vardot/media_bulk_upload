@@ -2,6 +2,7 @@
 
 namespace Drupal\media_bulk_upload\Form;
 
+use Drupal\Component\Utility\Bytes;
 use Drupal\Core\Entity\Display\EntityFormDisplayInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
@@ -79,7 +80,7 @@ class MediaBulkUploadForm extends FormBase {
     $this->mediaTypeStorage = $entityTypeManager->getStorage('media_type');
     $this->mediaBulkConfigStorage = $entityTypeManager->getStorage('media_bulk_config');
     $this->mediaStorage = $entityTypeManager->getStorage('media');
-    $this->maxFileSizeForm = format_size(file_upload_max_size())->render();
+    $this->maxFileSizeForm = '0 MB';
     $this->mediaSubFormManager = $mediaSubFormManager;
   }
 
@@ -419,7 +420,10 @@ class MediaBulkUploadForm extends FormBase {
    * @return bool
    */
   private function isMaxFileSizeLarger($MaxFileSize) {
-    return ($MaxFileSize > $this->maxFileSizeForm);
+    $size = Bytes::toInt($MaxFileSize);
+    $currentSize = Bytes::toInt($this->maxFileSizeForm);
+
+    return ($size > $currentSize);
   }
 
   /**
