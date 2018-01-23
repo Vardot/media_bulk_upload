@@ -125,7 +125,7 @@ class MediaBulkUploadController extends ControllerBase {
     $mediaBulkConfigStorage = $this->entityTypeManager->getStorage('media_bulk_config');
     $mediaBulkConfigEntities = $mediaBulkConfigStorage->loadMultiple();
     foreach ($mediaBulkConfigEntities as $mediaBulkConfig) {
-      $url = Url::fromRoute('media_bulk_upload.upload_form', ['media_bulk_config' => $mediaBulkConfig]);
+      $url = Url::fromRoute('media_bulk_upload.upload_form', ['media_bulk_config' => $mediaBulkConfig->id()]);
       if ($url->access()) {
         return AccessResult::allowed();
       }
