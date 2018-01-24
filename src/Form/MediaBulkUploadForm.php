@@ -307,16 +307,28 @@ class MediaBulkUploadForm extends FormBase {
    */
   private function processFile(array $mediaTypes, array $file, array $mediaTypeTargetFieldSettings, array $mediaTypeTargetDirectories) {
     $fileInfo = pathinfo($file['filename']);
+    $filename = $fileInfo['basename'];
+
     if (!$this->validateFilename($fileInfo)) {
-      throw new \Exception('File does not have a valid extension or filename.');
+      drupal_set_message(t('File :filename does not have a valid extension or filename.', array(':filename' => $filename)), 'error');
+      throw new \Exception("File $filename does not have a valid extension or filename.");
     }
 
     $mediaTypeId = $this->getMediaTypeIdByExtension($fileInfo, $mediaTypeTargetFieldSettings);
+    $targetFieldSettings = $mediaTypeTargetFieldSettings[$mediaTypeId];
+    if (!$this->validateFileSize($file['path'], $targetFieldSettings)) {
+      $fileSizeSetting = $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings);
+      $mediaTypeLabel = $mediaTypes[$mediaTypeId]->label();
+      drupal_set_message(t('File :filename exceeds the maximum file size of :file_size for media type :media_type exceeded.', array(':filename' => $filename, ':file_size' => $fileSizeSetting, ':media_type' => $mediaTypeLabel)), 'error');
+      throw new \Exception("File $filename exceeds the maximum file size of $fileSizeSetting for media type $mediaTypeLabel exceeded.");
+    }
+
     $destination = $mediaTypeTargetDirectories[$mediaTypeId] . '/' . $file['filename'];
     $data = file_get_contents($file['path']);
     $fileEntity = file_save_data($data, $destination);
 
     if (!$fileEntity) {
+      drupal_set_message(t('File :filename could not be created.', array(':filename' => $filename)), 'error');
       throw new \Exception('File entity could not be created.');
     }
 
@@ -340,6 +352,24 @@ class MediaBulkUploadForm extends FormBase {
       return FALSE;
     }
     return TRUE;
+  }
+
+  /**
+   * Check the size of a file.
+   *
+   * @param string $filePath
+   *   File path.
+   * @param array $targetFieldSettings
+   *   Bundle type target file field settings
+   *
+   * @return bool
+   *   True if max size for a given file do not exceeds max size for its type.
+   */
+  private function validateFileSize($filePath, $targetFieldSettings) {
+    $fileSizeSetting = $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings);
+    $fileSize = filesize($filePath);
+    $maxFileSize = Bytes::toInt($fileSizeSetting);
+    return $fileSize <= $maxFileSize;
   }
 
   /**
