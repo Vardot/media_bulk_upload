@@ -178,8 +178,9 @@ class MediaBulkUploadForm extends FormBase {
       ],
     ];
 
+    $extensions = natsort($this->allowed_extensions);
     $information = '<p>' . $this->t('Allowed extensions: @allowedExtensions', [
-      '@allowedExtensions' => implode(', ', $this->allowed_extensions),
+      '@allowedExtensions' => implode(', ', $extensions),
     ]) . '</p>';
     $information .= '<p>' . $this->t('Maximum file size for each file: @maxFileSize', [
       '@maxFileSize' => $this->maxFileSizeForm,
