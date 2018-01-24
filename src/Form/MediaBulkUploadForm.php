@@ -126,19 +126,23 @@ class MediaBulkUploadForm extends FormBase {
     /** @var \Drupal\media\MediaTypeInterface[] $mediaTypes */
     $mediaTypes = $this->mediaTypeStorage->loadMultiple($mediaTypeIds);
     $mediaFormFieldComponents = [];
+    $items = [];
 
     foreach ($mediaTypes as $mediaType) {
       $targetFieldSettings = $this->mediaSubFormManager->getTargetFieldSettings($mediaType);
-      $this->addAllowedExtensions($this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings));
+      $extensions = $this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings);
+      natsort($extensions);
+      $this->addAllowedExtensions($extensions);
       $mediaFormFieldComponents[$mediaType->id()] = $this->mediaSubFormManager->getMediaEntityFieldComponents($mediaBulkConfig, $mediaType);
       if (!$this->isMaxFileSizeLarger($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings))) {
         continue;
       }
 
+      $items[] = $mediaType->label() . ' (max ' . $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings) . '): ' . implode(', ', $extensions);
       $this->setMaxFileSizeForm($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings));
     }
 
-    return $this->setupForm($form, $form_state, $mediaBulkConfig, $mediaFormFieldComponents);
+    return $this->setupForm($form, $form_state, $mediaBulkConfig, $mediaFormFieldComponents, $items);
   }
 
   /**
@@ -156,7 +160,7 @@ class MediaBulkUploadForm extends FormBase {
    * @return array
    *   Render array containing the form fields.
    */
-  private function setupForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $mediaBulkConfig, array $mediaFormFieldComponents) {
+  private function setupForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $mediaBulkConfig, array $mediaFormFieldComponents, array $items) {
     $form['#tree'] = TRUE;
     $form['information_wrapper'] = [
       '#type' => 'container',
@@ -187,11 +191,9 @@ class MediaBulkUploadForm extends FormBase {
     ]) . '</p>';
 
     $form['information_wrapper']['information'] = [
-      '#type' => 'html_tag',
-      '#tag' => 'span',
-      '#id' => 'media_bulk_upload_information',
-      '#name' => 'media_bulk_upload_information',
-      '#value' => $information,
+      '#theme' => 'item_list',
+      '#title' => $this->t('Media Types:'),
+      '#items' => $items,
     ];
 
     $form['information_wrapper']['warning'] = [
@@ -310,7 +312,7 @@ class MediaBulkUploadForm extends FormBase {
     $filename = $fileInfo['basename'];
 
     if (!$this->validateFilename($fileInfo)) {
-      drupal_set_message(t('File :filename does not have a valid extension or filename.', array(':filename' => $filename)), 'error');
+      drupal_set_message($this->t('File :filename does not have a valid extension or filename.', array(':filename' => $filename)), 'error');
       throw new \Exception("File $filename does not have a valid extension or filename.");
     }
 
@@ -319,7 +321,7 @@ class MediaBulkUploadForm extends FormBase {
     if (!$this->validateFileSize($file['path'], $targetFieldSettings)) {
       $fileSizeSetting = $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings);
       $mediaTypeLabel = $mediaTypes[$mediaTypeId]->label();
-      drupal_set_message(t('File :filename exceeds the maximum file size of :file_size for media type :media_type exceeded.', array(':filename' => $filename, ':file_size' => $fileSizeSetting, ':media_type' => $mediaTypeLabel)), 'error');
+      drupal_set_message($this->t('File :filename exceeds the maximum file size of :file_size for media type :media_type exceeded.', array(':filename' => $filename, ':file_size' => $fileSizeSetting, ':media_type' => $mediaTypeLabel)), 'error');
       throw new \Exception("File $filename exceeds the maximum file size of $fileSizeSetting for media type $mediaTypeLabel exceeded.");
     }
 
@@ -328,7 +330,7 @@ class MediaBulkUploadForm extends FormBase {
     $fileEntity = file_save_data($data, $destination);
 
     if (!$fileEntity) {
-      drupal_set_message(t('File :filename could not be created.', array(':filename' => $filename)), 'error');
+      drupal_set_message($this->t('File :filename could not be created.', array(':filename' => $filename)), 'error');
       throw new \Exception('File entity could not be created.');
     }
 
