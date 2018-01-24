@@ -210,7 +210,7 @@ class MediaSubFormManager implements ContainerInjectionInterface {
    */
   public function getMediaFormDisplay(MediaBulkConfigInterface $mediaBulkConfig, MediaTypeInterface $mediaType) {
     /** @var \Drupal\Core\Entity\Display\EntityFormDisplayInterface $mediaFormDisplay */
-    $mediaFormDisplay = $this->entityFormDisplayStorage->load($mediaBulkConfig->get('form_mode'));
+    $mediaFormDisplay = $this->entityFormDisplayStorage->load('media.' . $mediaType->id() . '.' . $mediaBulkConfig->get('form_mode'));
     if (is_null($mediaFormDisplay)) {
       $mediaFormDisplay = $this->entityFormDisplayStorage->load('media.' . $mediaType->id() . '.default');
     }

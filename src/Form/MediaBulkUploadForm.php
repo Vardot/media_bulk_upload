@@ -132,13 +132,13 @@ class MediaBulkUploadForm extends FormBase {
       $targetFieldSettings = $this->mediaSubFormManager->getTargetFieldSettings($mediaType);
       $extensions = $this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings);
       natsort($extensions);
+      $items[] = $mediaType->label() . '(max ' . $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings) . '): ' . implode(', ', $extensions);
       $this->addAllowedExtensions($extensions);
       $mediaFormFieldComponents[$mediaType->id()] = $this->mediaSubFormManager->getMediaEntityFieldComponents($mediaBulkConfig, $mediaType);
       if (!$this->isMaxFileSizeLarger($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings))) {
         continue;
       }
 
-      $items[] = $mediaType->label() . ' (max ' . $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings) . '): ' . implode(', ', $extensions);
       $this->setMaxFileSizeForm($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings));
     }
 
@@ -184,11 +184,11 @@ class MediaBulkUploadForm extends FormBase {
 
     $extensions = natsort($this->allowed_extensions);
     $information = '<p>' . $this->t('Allowed extensions: @allowedExtensions', [
-      '@allowedExtensions' => implode(', ', $extensions),
-    ]) . '</p>';
+        '@allowedExtensions' => implode(', ', $extensions),
+      ]) . '</p>';
     $information .= '<p>' . $this->t('Maximum file size for each file: @maxFileSize', [
-      '@maxFileSize' => $this->maxFileSizeForm,
-    ]) . '</p>';
+        '@maxFileSize' => $this->maxFileSizeForm,
+      ]) . '</p>';
 
     $form['information_wrapper']['information'] = [
       '#theme' => 'item_list',
