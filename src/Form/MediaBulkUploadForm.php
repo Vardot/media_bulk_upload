@@ -182,14 +182,6 @@ class MediaBulkUploadForm extends FormBase {
       ],
     ];
 
-    $extensions = natsort($this->allowed_extensions);
-    $information = '<p>' . $this->t('Allowed extensions: @allowedExtensions', [
-        '@allowedExtensions' => implode(', ', $extensions),
-      ]) . '</p>';
-    $information .= '<p>' . $this->t('Maximum file size for each file: @maxFileSize', [
-        '@maxFileSize' => $this->maxFileSizeForm,
-      ]) . '</p>';
-
     $form['information_wrapper']['information'] = [
       '#theme' => 'item_list',
       '#title' => $this->t('Media Types:'),
@@ -415,10 +407,10 @@ class MediaBulkUploadForm extends FormBase {
     $targetFieldName = $this->mediaSubFormManager->getTargetFieldName($mediaType);
     return [
       'bundle' => $mediaType->id(),
-      'name' => $fileInfo[$fileInfo['filename']],
+      'name' => $fileInfo['filename'],
       $targetFieldName => [
         'target_id' => $file->id(),
-        'title' => $fileInfo[$fileInfo['filename']],
+        'title' => $fileInfo['filename'],
       ],
     ];
   }
