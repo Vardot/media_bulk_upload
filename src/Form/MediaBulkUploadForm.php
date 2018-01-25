@@ -132,7 +132,7 @@ class MediaBulkUploadForm extends FormBase {
       $targetFieldSettings = $this->mediaSubFormManager->getTargetFieldSettings($mediaType);
       $extensions = $this->mediaSubFormManager->getTargetFieldExtensions($targetFieldSettings);
       natsort($extensions);
-      $items[] = $mediaType->label() . '(max ' . $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings) . '): ' . implode(', ', $extensions);
+      $items[] = $mediaType->label() . ' (max ' . $this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings) . '): ' . implode(', ', $extensions);
       $this->addAllowedExtensions($extensions);
       $mediaFormFieldComponents[$mediaType->id()] = $this->mediaSubFormManager->getMediaEntityFieldComponents($mediaBulkConfig, $mediaType);
       if (!$this->isMaxFileSizeLarger($this->mediaSubFormManager->getTargetFieldMaxSize($targetFieldSettings))) {
