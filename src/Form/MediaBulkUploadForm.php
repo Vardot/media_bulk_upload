@@ -280,10 +280,7 @@ class MediaBulkUploadForm extends FormBase {
     }
 
     if (!empty($savedMediaItems)) {
-      drupal_set_message($this->t('@count media item(s) are created.', [
-        '@count',
-        count($savedMediaItems)
-      ]));
+      drupal_set_message($this->t('@count media item(s) are created.', ['@count' => count($savedMediaItems)]));
     }
   }
 
