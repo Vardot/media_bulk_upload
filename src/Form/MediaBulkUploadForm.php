@@ -261,6 +261,7 @@ class MediaBulkUploadForm extends FormBase {
     $mediaType = reset($mediaTypes);
     $mediaFormDisplay = $this->mediaSubFormManager->getMediaFormDisplay($mediaBulkConfig, $mediaType);
 
+    $savedMediaItems = [];
     foreach ($files as $file) {
       try {
         $media = $this->processFile($mediaTypes, $file, $mediaTypeTargetFieldSettings, $targetDirectories);
@@ -271,13 +272,19 @@ class MediaBulkUploadForm extends FormBase {
           $this->copyFormValuesToEntity($media, $mediaFormDisplay, $form['fields']['shared'], $form_state);
         }
         $media->save();
+        $savedMediaItems[] = $media;
       }
       catch (\Exception $e) {
         watchdog_exception('media_bulk_upload', $e);
       }
     }
 
-    // TODO: Show message that media has been created.
+    if (!empty($savedMediaItems)) {
+      drupal_set_message($this->t('@count media item(s) are created.', [
+        '@count',
+        count($savedMediaItems)
+      ]));
+    }
   }
 
   /**
