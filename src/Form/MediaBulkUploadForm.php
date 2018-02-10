@@ -80,7 +80,7 @@ class MediaBulkUploadForm extends FormBase {
     $this->mediaTypeStorage = $entityTypeManager->getStorage('media_type');
     $this->mediaBulkConfigStorage = $entityTypeManager->getStorage('media_bulk_config');
     $this->mediaStorage = $entityTypeManager->getStorage('media');
-    $this->maxFileSizeForm = '0 MB';
+    $this->maxFileSizeForm = ini_get("upload_max_filesize");
     $this->mediaSubFormManager = $mediaSubFormManager;
   }
 

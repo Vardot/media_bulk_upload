@@ -336,7 +336,11 @@ class MediaSubFormManager implements ContainerInjectionInterface {
    *   Returns the max filesize as a string..
    */
   public function getTargetFieldMaxSize(array $targetFieldSettings) {
-    return $targetFieldSettings['max_filesize'];
+    $maxFileSize = $targetFieldSettings['max_filesize'];
+    if(empty($maxFileSize)) {
+      $maxFileSize = $this->defaultMaxFileSize;
+    }
+    return $maxFileSize;
   }
 
   /**
