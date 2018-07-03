@@ -27,7 +27,7 @@ entity.media_bulk_config.collection:
     _entity_list: 'media_bulk_config'
     _title: 'Bulk upload media'
   requirements:
-    _custom_access: '\Drupal\media_bulk_upload\Controller\MediaBulkUploadController::accessList'
+    _permission: 'administer media_bulk_upload configuration'
   options:
     _admin_route: TRUE
 
