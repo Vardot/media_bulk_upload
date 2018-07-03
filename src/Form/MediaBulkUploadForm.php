@@ -432,6 +432,14 @@ class MediaBulkUploadForm extends FormBase {
    *   Form State.
    */
   private function copyFormValuesToEntity(MediaInterface $media, EntityFormDisplayInterface $mediaFormDisplay, array $form, FormStateInterface $form_state) {
+    // If the shared name is empty, remove it from the form state.
+    // Otherwise the extractFormValues function will override with an empty value.
+    $shared = $form_state->getValue(['fields', 'shared']);
+    if (empty($shared['name'][0]['value'])) {
+      unset($shared['name']);
+      $form_state->setValue(['fields', 'shared'], $shared);
+    }
+
     $extracted = $mediaFormDisplay->extractFormValues($media, $form, $form_state);
     foreach ($form_state->getValues() as $name => $values) {
       if (!$media->hasField($name) || isset($extracted[$name])) {
