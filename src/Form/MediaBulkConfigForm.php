@@ -64,6 +64,7 @@ class MediaBulkConfigForm extends EntityForm {
       '#disabled' => !$mediaBulkConfig->isNew(),
     ];
 
+    $media_types = $mediaBulkConfig->get('media_types');
     $form['media_types'] = [
       '#type' => 'checkboxes',
       '#title' => $this->t('Media Types'),
@@ -73,7 +74,7 @@ class MediaBulkConfigForm extends EntityForm {
         chosen, that the media entity will be assigned automatically to one of 
         these types.'),
       '#options' => $this->getMediaTypeOptions(),
-      '#default_value' => $mediaBulkConfig->get('media_types'),
+      '#default_value' => isset($media_types) ? $media_types : [],
       '#size' => 20,
       '#multiple' => TRUE,
     ];
