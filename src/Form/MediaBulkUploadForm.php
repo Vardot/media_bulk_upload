@@ -7,6 +7,7 @@ use Drupal\Core\Entity\Display\EntityFormDisplayInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\file\FileInterface;
 use Drupal\media\MediaInterface;
 use Drupal\media\MediaTypeInterface;
@@ -43,6 +44,13 @@ class MediaBulkUploadForm extends FormBase {
   protected $mediaStorage;
 
   /**
+   * File entity storage.
+   *
+   * @var \Drupal\file\FileStorageInterface
+   */
+  protected $fileStorage;
+
+  /**
    * Media SubForm Manager.
    *
    * @var \Drupal\media_bulk_upload\MediaSubFormManager
@@ -64,6 +72,13 @@ class MediaBulkUploadForm extends FormBase {
   protected $allowed_extensions = [];
 
   /**
+   * The current user.
+   *
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
+  protected $currentUser;
+
+  /**
    * BulkMediaUploadForm constructor.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
@@ -75,11 +90,13 @@ class MediaBulkUploadForm extends FormBase {
    */
   public function __construct(
     EntityTypeManagerInterface $entityTypeManager,
-    MediaSubFormManager $mediaSubFormManager
+    MediaSubFormManager $mediaSubFormManager,
+    AccountProxyInterface $currentUser
   ) {
     $this->mediaTypeStorage = $entityTypeManager->getStorage('media_type');
     $this->mediaBulkConfigStorage = $entityTypeManager->getStorage('media_bulk_config');
     $this->mediaStorage = $entityTypeManager->getStorage('media');
+    $this->fileStorage = $entityTypeManager->getStorage('file');
     $this->maxFileSizeForm = ini_get("upload_max_filesize");
     $this->mediaSubFormManager = $mediaSubFormManager;
   }
@@ -90,7 +107,8 @@ class MediaBulkUploadForm extends FormBase {
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('entity_type.manager'),
-      $container->get('media_bulk_upload.subform_manager')
+      $container->get('media_bulk_upload.subform_manager'),
+      $container->get('current_user')
     );
   }
 
@@ -322,8 +340,16 @@ class MediaBulkUploadForm extends FormBase {
     }
 
     $destination = $mediaTypeTargetDirectories[$mediaTypeId] . '/' . $file['filename'];
-    $data = file_get_contents($file['path']);
-    $fileEntity = file_save_data($data, $destination);
+
+    /** @var \Drupal\file\FileInterface $fileEntity */
+    $fileEntity = $this->fileStorage->create([
+      'uri' => $file['path'],
+      'uid' => $this->currentUser->id(),
+      'status' => FILE_STATUS_PERMANENT,
+    ]);
+    $fileEntity->save();
+
+    file_move($fileEntity, $destination);
 
     if (!$fileEntity) {
       drupal_set_message($this->t('File :filename could not be created.', array(':filename' => $filename)), 'error');
