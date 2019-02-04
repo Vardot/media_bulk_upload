@@ -3,6 +3,7 @@
 namespace Drupal\media_bulk_upload;
 
 use Drupal\Component\Render\PlainTextOutput;
+use Drupal\Component\Utility\Bytes;
 use Drupal\Core\DependencyInjection\ContainerInjectionInterface;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -84,7 +85,7 @@ class MediaSubFormManager implements ContainerInjectionInterface {
     $this->entityFormDisplayStorage = $entityTypeManager->getStorage('entity_form_display');
     $this->entityFieldManager = $entityFieldManager;
     $this->token = $token;
-    $this->defaultMaxFileSize = format_size(file_upload_max_size())->render();
+    $this->defaultMaxFileSize = $this->formatSize(file_upload_max_size());
   }
 
   /**
@@ -358,5 +359,34 @@ class MediaSubFormManager implements ContainerInjectionInterface {
     $mediaFormDisplay = $this->getMediaFormDisplay($mediaBulkConfig, $mediaType);
     $fieldComponents = $mediaFormDisplay->getComponents();
     return array_keys($fieldComponents);
+  }
+
+  /**
+   * Format the amount of bites into a common string format.
+   *
+   * @param int $size
+   *  Size in bytes.
+   *
+   * @return string
+   */
+  private function formatSize($size) {
+    $unit = 'B';
+    $calculatedSize = $size;
+    if ($size >= Bytes::KILOBYTE) {
+      $calculatedSize = $size / Bytes::KILOBYTE;
+      $units = ['KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+
+      foreach ($units as $unit) {
+        if (round($calculatedSize, 2) >= Bytes::KILOBYTE) {
+          $calculatedSize = $calculatedSize / Bytes::KILOBYTE;
+        }
+        else {
+          break;
+        }
+      }
+    }
+
+    $calculatedSize = round($calculatedSize, 2);
+    return sprintf('%d ' . $unit, $calculatedSize);
   }
 }
