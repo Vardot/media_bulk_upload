@@ -101,6 +101,7 @@ class MediaBulkUploadController extends ControllerBase {
 
       $build['#bundles'][$mediaBulkConfigEntity->id()] = [
         'label' => $mediaBulkConfigEntity->label(),
+        'description' => '',
         'add_link' => Link::createFromRoute($mediaBulkConfigEntity->label(), $form_route_name, ['media_bulk_config' => $mediaBulkConfigEntity->id()]),
       ];
     }
