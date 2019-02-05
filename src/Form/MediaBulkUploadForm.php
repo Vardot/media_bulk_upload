@@ -313,7 +313,7 @@ class MediaBulkUploadForm extends FormBase {
           continue;
         }
         if ($this->mediaSubFormManager->validateMediaFormDisplayUse($mediaBulkConfig)) {
-          $extracted = $mediaFormDisplay->extractFormValues($media, $form, $form_state);
+          $extracted = $mediaFormDisplay->extractFormValues($media, $form['fields']['shared'], $form_state);
           $this->copyFormValuesToEntity($media, $extracted, $form_state);
         }
         $media->save();
@@ -426,7 +426,14 @@ class MediaBulkUploadForm extends FormBase {
   private function validateFileSize(MediaTypeInterface $mediaType, $filePath) {
     $fileSizeSetting = $this->mediaSubFormManager->getMediaTypeManager()->getTargetFieldMaxSize($mediaType);
     $fileSize = filesize($filePath);
-    $maxFileSize = Bytes::toInt($fileSizeSetting);
+    $maxFileSize = !empty($fileSizeSetting)
+      ? Bytes::toInt($fileSizeSetting)
+      : file_upload_max_size();
+
+    if ($maxFileSize == 0) {
+      return true;
+    }
+
     return $fileSize <= $maxFileSize;
   }
 
