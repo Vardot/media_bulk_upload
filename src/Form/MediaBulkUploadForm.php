@@ -379,7 +379,13 @@ class MediaBulkUploadForm extends FormBase {
       throw new \Exception("File $filename exceeds the maximum file size of $fileSizeSetting for media type $mediaTypeLabel exceeded.");
     }
 
-    $destination = $this->mediaSubFormManager->getTargetFieldDirectory($mediaType) . '/' . $file['filename'];
+
+    $uri_scheme = $this->mediaSubFormManager->getTargetFieldDirectory($mediaType);
+    $destination = $uri_scheme . '/' . $file['filename'];
+    $file_default_scheme = \Drupal::config('system.file')->get('default_scheme') . '://';
+    if ($uri_scheme === $file_default_scheme) {
+      $destination = $uri_scheme . $file['filename'];
+    }
 
     /** @var \Drupal\file\FileInterface $fileEntity */
     $fileEntity = $this->fileStorage->create([
