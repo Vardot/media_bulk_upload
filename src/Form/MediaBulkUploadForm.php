@@ -218,9 +218,12 @@ class MediaBulkUploadForm extends FormBase {
       $form['fields'] = [
         '#type' => 'fieldset',
         '#title' => $this->t('Fields'),
-        'shared' => [],
+        'shared' => [
+          '#field_parents' => ['fields', 'shared'],
+          '#parents' => ['fields', 'shared'],
+        ],
       ];
-      $this->mediaSubFormManager->buildMediaSubForm($form, $form_state, $mediaBulkConfig);
+      $this->mediaSubFormManager->buildMediaSubForm($form['fields']['shared'], $form_state, $mediaBulkConfig);
     }
 
     $form['media_bundle_config'] = [
