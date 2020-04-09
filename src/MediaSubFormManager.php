@@ -226,10 +226,15 @@ class MediaSubFormManager implements ContainerInjectionInterface, MediaSubFormMa
         continue;
       }
       unset($elements[$child]['#parents']);
+
+      $parents = [];
+      if (!empty($elements[$child]['widget']['#parents'])) {
+        $parents = $elements[$child]['widget']['#parents'];
+      }
       $widget_parents = array_merge([
         'fields',
         'shared',
-      ], $elements[$child]['widget']['#parents']);
+      ], $parents);
       $elements[$child]['widget']['#parents'] = $widget_parents;
 
       $this->forceFieldsAsOptional($elements[$child]);
