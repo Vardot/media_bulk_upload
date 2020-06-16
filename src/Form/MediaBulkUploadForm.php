@@ -3,9 +3,11 @@
 namespace Drupal\media_bulk_upload\Form;
 
 use Drupal\Component\Utility\Bytes;
+use Drupal\Component\Utility\Environment;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
 use Drupal\file\FileInterface;
 use Drupal\media\MediaInterface;
@@ -86,18 +88,21 @@ class MediaBulkUploadForm extends FormBase {
    *   Media Sub Form Manager.
    * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
    *   Current User.
+   * @param \Drupal\Core\Messenger\MessengerInterface $messenger
+   *   The messenger.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, MediaSubFormManager $mediaSubFormManager, AccountProxyInterface $currentUser) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, MediaSubFormManager $mediaSubFormManager, AccountProxyInterface $currentUser, MessengerInterface $messenger) {
     $this->mediaTypeStorage = $entityTypeManager->getStorage('media_type');
     $this->mediaBulkConfigStorage = $entityTypeManager->getStorage('media_bulk_config');
     $this->mediaStorage = $entityTypeManager->getStorage('media');
     $this->fileStorage = $entityTypeManager->getStorage('file');
-    $this->maxFileSizeForm = ini_get('upload_max_filesize');
+    $this->maxFileSizeForm = Environment::getUploadMaxSize();
     $this->mediaSubFormManager = $mediaSubFormManager;
     $this->currentUser = $currentUser;
+    $this->messenger = $messenger;
   }
 
   /**
@@ -110,7 +115,8 @@ class MediaBulkUploadForm extends FormBase {
     return new static(
       $container->get('entity_type.manager'),
       $container->get('media_bulk_upload.subform_manager'),
-      $container->get('current_user')
+      $container->get('current_user'),
+      $container->get('messenger')
     );
   }
 
@@ -198,9 +204,9 @@ class MediaBulkUploadForm extends FormBase {
       '#tag' => 'span',
       '#id' => 'media_bulk_upload_information',
       '#name' => 'media_bulk_upload_information',
-      '#value' => '<p>Please be 
-        aware that if file extensions overlap between the media types that are 
-        available in this upload form, that the media entity will be assigned 
+      '#value' => '<p>Please be
+        aware that if file extensions overlap between the media types that are
+        available in this upload form, that the media entity will be assigned
         automatically to one of these types.</p>',
     ];
 
@@ -437,7 +443,7 @@ class MediaBulkUploadForm extends FormBase {
     $fileSize = filesize($filePath);
     $maxFileSize = !empty($fileSizeSetting)
       ? Bytes::toInt($fileSizeSetting)
-      : file_upload_max_size();
+      : Environment::getUploadMaxSize();
 
     if ($maxFileSize == 0) {
       return true;
