@@ -97,6 +97,14 @@ class MediaBulkConfigForm extends EntityForm implements ContainerInjectionInterf
       '#default_value' => $mediaBulkConfig->get('form_mode'),
     ];
 
+    $form['upload_location'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Upload location'),
+      '#description' => $this->t('Location to initially upload the files before they are moved to the determined
+      location in the media types.'),
+      '#default_value' => $mediaBulkConfig->get('upload_location'),
+    ];
+
     return $form;
   }
 

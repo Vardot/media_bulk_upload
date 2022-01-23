@@ -2,8 +2,10 @@
 
 namespace Drupal\media_bulk_upload\Form;
 
+use Drupal;
 use Drupal\Component\Utility\Bytes;
 use Drupal\Component\Utility\Environment;
+use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -14,6 +16,7 @@ use Drupal\media\MediaInterface;
 use Drupal\media\MediaTypeInterface;
 use Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface;
 use Drupal\media_bulk_upload\MediaSubFormManager;
+use Exception;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -28,21 +31,21 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @var \Drupal\Core\Entity\EntityStorageInterface
    */
-  protected $mediaTypeStorage;
+  protected EntityStorageInterface $mediaTypeStorage;
 
   /**
    * Media Bulk Config storage.
    *
    * @var \Drupal\Core\Entity\EntityStorageInterface
    */
-  protected $mediaBulkConfigStorage;
+  protected EntityStorageInterface $mediaBulkConfigStorage;
 
   /**
    * Media entity storage.
    *
    * @var \Drupal\Core\Entity\EntityStorageInterface
    */
-  protected $mediaStorage;
+  protected EntityStorageInterface $mediaStorage;
 
   /**
    * File entity storage.
@@ -56,7 +59,7 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @var \Drupal\media_bulk_upload\MediaSubFormManager
    */
-  protected $mediaSubFormManager;
+  protected MediaSubFormManager $mediaSubFormManager;
 
   /**
    * The max file size for the media bulk form.
@@ -70,14 +73,14 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @var array
    */
-  protected $allowed_extensions = [];
+  protected array $allowed_extensions = [];
 
   /**
    * The current user.
    *
    * @var \Drupal\Core\Session\AccountProxyInterface
    */
-  protected $currentUser;
+  protected AccountProxyInterface $currentUser;
 
   /**
    * BulkMediaUploadForm constructor.
@@ -126,7 +129,7 @@ class MediaBulkUploadForm extends FormBase {
    * @return string
    *   The unique string identifying the form.
    */
-  public function getFormId() {
+  public function getFormId(): string {
     return 'media_bulk_upload_form';
   }
 
@@ -145,7 +148,7 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @throws \Exception
    */
-  public function buildForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $media_bulk_config = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, MediaBulkConfigInterface $media_bulk_config = NULL): array {
     $mediaBulkConfig = $media_bulk_config;
 
     if ($mediaBulkConfig === NULL) {
@@ -210,15 +213,20 @@ class MediaBulkUploadForm extends FormBase {
         automatically to one of these types.</p>',
     ];
 
-    $form['dropzonejs'] = [
-      '#type' => 'dropzonejs',
-      '#title' => $this->t('Dropzone'),
-      '#required' => TRUE,
-      '#dropzone_description' => $this->t('Click or drop your files here'),
-      '#max_filesize' => $this->maxFileSizeForm,
-      '#extensions' => implode(' ', $this->allowed_extensions),
-    ];
+    $validators = array(
+      'file_validate_extensions' => [implode(' ', $this->allowed_extensions)],
+      'file_validate_size' => [$this->maxFileSizeForm],
+    );
 
+    $form['file_upload'] = [
+      '#type' => 'managed_file',
+      '#multiple' => TRUE,
+      '#title' => $this->t('File Upload'),
+      '#required' => TRUE,
+      '#description' => $this->t('Click or drop your files here'),
+      '#upload_validators' => $validators,
+      '#upload_location' => $mediaBulkConfig->get('upload_location'),
+    ];
 
     if ($this->mediaSubFormManager->validateMediaFormDisplayUse($mediaBulkConfig)) {
       $form['fields'] = [
@@ -254,7 +262,7 @@ class MediaBulkUploadForm extends FormBase {
    * @return $this
    *   MediaBulkUploadForm.
    */
-  protected function addAllowedExtensions(array $extensions) {
+  protected function addAllowedExtensions(array $extensions): MediaBulkUploadForm {
     $this->allowed_extensions = array_unique(array_merge($this->allowed_extensions, $extensions));
     return $this;
   }
@@ -268,9 +276,9 @@ class MediaBulkUploadForm extends FormBase {
    * @return bool
    *  TRUE if the given size is larger than the one that is set.
    */
-  protected function isMaxFileSizeLarger($MaxFileSize) {
-    $size = Bytes::toInt($MaxFileSize);
-    $currentSize = Bytes::toInt($this->maxFileSizeForm);
+  protected function isMaxFileSizeLarger(string $MaxFileSize): bool {
+    $size = Bytes::toNumber($MaxFileSize);
+    $currentSize = Bytes::toNumber($this->maxFileSizeForm);
 
     return ($size > $currentSize);
   }
@@ -284,7 +292,7 @@ class MediaBulkUploadForm extends FormBase {
    * @return $this
    *   MediaBulkUploadForm.
    */
-  protected function setMaxFileSizeForm($newMaxFileSize) {
+  protected function setMaxFileSizeForm(string $newMaxFileSize): MediaBulkUploadForm {
     $this->maxFileSizeForm = $newMaxFileSize;
     return $this;
   }
@@ -306,7 +314,14 @@ class MediaBulkUploadForm extends FormBase {
 
     /** @var MediaBulkConfigInterface $mediaBulkConfig */
     $mediaBulkConfig = $this->mediaBulkConfigStorage->load($mediaBundleConfigId);
-    $files = $values['dropzonejs']['uploaded_files'];
+    $fileIds = $values['file_upload'];
+
+    if (empty($fileIds)) {
+      return;
+    }
+
+    /** @var \Drupal\file\FileInterface[] $files */
+    $files = $this->fileStorage->loadMultiple($fileIds);
 
     $mediaTypes = $this->mediaSubFormManager->getMediaTypeManager()->getBulkMediaTypes($mediaBulkConfig);
     $mediaType = reset($mediaTypes);
@@ -318,16 +333,13 @@ class MediaBulkUploadForm extends FormBase {
     foreach ($files as $file) {
       try {
         $media = $this->processFile($mediaBulkConfig, $file);
-        if (!$media) {
-          continue;
-        }
         if ($this->mediaSubFormManager->validateMediaFormDisplayUse($mediaBulkConfig)) {
           $extracted = $mediaFormDisplay->extractFormValues($media, $form['fields']['shared'], $form_state);
           $this->copyFormValuesToEntity($media, $extracted, $form_state);
         }
         $media->save();
         $savedMediaItems[] = $media;
-      } catch (\Exception $e) {
+      } catch (Exception $e) {
         watchdog_exception('media_bulk_upload', $e);
       }
     }
@@ -344,8 +356,8 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @param \Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface $mediaBulkConfig
    *   Media Bulk Config.
-   * @param array $file
-   *   File upload data.
+   * @param \Drupal\file\FileInterface $file
+   *   File entity.
    *
    * @return \Drupal\media\MediaInterface
    *   The unsaved media entity that is created.
@@ -355,24 +367,24 @@ class MediaBulkUploadForm extends FormBase {
    * @throws \Drupal\Core\Entity\EntityStorageException
    * @throws \Exception
    */
-  protected function processFile(MediaBulkConfigInterface $mediaBulkConfig, array $file) {
-    $fileInfo = pathinfo($file['filename']);
-    $filename = $fileInfo['basename'];
+  protected function processFile(MediaBulkConfigInterface $mediaBulkConfig, FileInterface $file): MediaInterface {
+    $filename = $file->getFilename();
 
-    if (!$this->validateFilename($fileInfo)) {
+    if (!$this->validateFile($file)) {
       $this->messenger()->addError($this->t('File :filename does not have a valid extension or filename.', [':filename' => $filename]));
-      throw new \Exception("File $filename does not have a valid extension or filename.");
+      throw new Exception("File $filename does not have a valid extension or filename.");
     }
 
     $allowedMediaTypes = $this->mediaSubFormManager->getMediaTypeManager()
       ->getBulkMediaTypes($mediaBulkConfig);
+    $extension = pathinfo($file->getFilename(), PATHINFO_EXTENSION);
     $matchingMediaTypes = $this->mediaSubFormManager->getMediaTypeManager()
-      ->getMediaTypeIdsByFileExtension($fileInfo['extension']);
+      ->getMediaTypeIdsByFileExtension($extension);
 
     $mediaTypes = array_intersect_key($matchingMediaTypes, $allowedMediaTypes);
     $mediaType = reset($mediaTypes);
 
-    if (!$this->validateFileSize($mediaType, $file['path'])) {
+    if (!$this->validateFileSize($mediaType, $file)) {
       $fileSizeSetting = $this->mediaSubFormManager->getMediaTypeManager()
         ->getTargetFieldMaxSize($mediaType);
       $mediaTypeLabel = $mediaType->label();
@@ -382,33 +394,22 @@ class MediaBulkUploadForm extends FormBase {
           ':file_size' => $fileSizeSetting,
           ':media_type' => $mediaTypeLabel,
         ]));
-      throw new \Exception("File $filename exceeds the maximum file size of $fileSizeSetting for media type $mediaTypeLabel exceeded.");
+      throw new Exception("File $filename exceeds the maximum file size of $fileSizeSetting for media type $mediaTypeLabel exceeded.");
     }
-
 
     $uri_scheme = $this->mediaSubFormManager->getTargetFieldDirectory($mediaType);
-    $destination = $uri_scheme . '/' . $file['filename'];
-    $file_default_scheme = \Drupal::config('system.file')->get('default_scheme') . '://';
+    $destination = $uri_scheme . '/' . $file->getFilename();
+    $file_default_scheme = Drupal::config('system.file')->get('default_scheme') . '://';
     if ($uri_scheme === $file_default_scheme) {
-      $destination = $uri_scheme . $file['filename'];
+      $destination = $uri_scheme . $file->getFilename();
     }
 
-    /** @var \Drupal\file\FileInterface $fileEntity */
-    $fileEntity = $this->fileStorage->create([
-      'uri' => $file['path'],
-      'uid' => $this->currentUser->id(),
-      'status' => FILE_STATUS_PERMANENT,
-    ]);
-    $fileEntity->save();
-
-    file_move($fileEntity, $destination);
-
-    if (!$fileEntity) {
-      $this->messenger()->addError($this->t('File :filename could not be created.', [':filename' => $filename]), 'error');
-      throw new \Exception('File entity could not be created.');
+    if (!file_move($file, $destination)) {
+      $this->messenger()->addError($this->t('File :filename could not be moved.', [':filename' => $filename]), 'error');
+      throw new Exception('File entity could not be moved.');
     }
 
-    $values = $this->getNewMediaValues($mediaType, $fileInfo, $fileEntity);
+    $values = $this->getNewMediaValues($mediaType, $file);
     /** @var \Drupal\media\MediaInterface $media */
     $media = $this->mediaStorage->create($values);
     return $media;
@@ -417,14 +418,13 @@ class MediaBulkUploadForm extends FormBase {
   /**
    * Validate if the filename and extension are valid in the provided file info.
    *
-   * @param array $fileInfo
-   *   File info.
+   * @param \Drupal\file\FileInterface $file
    *
    * @return bool
    *   If the file info validates, returns true.
    */
-  protected function validateFilename(array $fileInfo) {
-    return !(empty($fileInfo['filename']) || empty($fileInfo['extension']));
+  protected function validateFile(FileInterface $file): bool {
+    return !(empty($file->getFilename()) || empty($file->getMimeType()));
   }
 
   /**
@@ -432,17 +432,16 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @param \Drupal\media\MediaTypeInterface $mediaType
    *   Media Type.
-   * @param string $filePath
-   *   File path.
+   * @param \Drupal\file\FileInterface $file
    *
    * @return bool
    *   True if max size for a given file do not exceeds max size for its type.
    */
-  protected function validateFileSize(MediaTypeInterface $mediaType, $filePath) {
+  protected function validateFileSize(MediaTypeInterface $mediaType, FileInterface $file): bool {
     $fileSizeSetting = $this->mediaSubFormManager->getMediaTypeManager()->getTargetFieldMaxSize($mediaType);
-    $fileSize = filesize($filePath);
+    $fileSize = $file->getSize();
     $maxFileSize = !empty($fileSizeSetting)
-      ? Bytes::toInt($fileSizeSetting)
+      ? Bytes::toNumber($fileSizeSetting)
       : Environment::getUploadMaxSize();
 
     if ($maxFileSize == 0) {
@@ -457,23 +456,21 @@ class MediaBulkUploadForm extends FormBase {
    *
    * @param \Drupal\media\MediaTypeInterface $mediaType
    *   Media Type ID.
-   * @param array $fileInfo
-   *   File info.
    * @param \Drupal\file\FileInterface $file
    *   File entity.
    *
    * @return array
    *   Return an array describing the new media entity.
    */
-  protected function getNewMediaValues(MediaTypeInterface $mediaType, array $fileInfo, FileInterface $file) {
+  protected function getNewMediaValues(MediaTypeInterface $mediaType, FileInterface $file): array {
     $targetFieldName = $this->mediaSubFormManager->getMediaTypeManager()
       ->getTargetFieldName($mediaType);
     return [
       'bundle' => $mediaType->id(),
-      'name' => $fileInfo['filename'],
+      'name' => $file->getFilename(),
       $targetFieldName => [
         'target_id' => $file->id(),
-        'title' => $fileInfo['filename'],
+        'title' => $file->getFilename(),
       ],
     ];
   }
@@ -506,7 +503,7 @@ class MediaBulkUploadForm extends FormBase {
    * @return $this
    *   Media Bulk Upload Form.
    */
-  protected function prepareFormValues(FormStateInterface $form_state) {
+  protected function prepareFormValues(FormStateInterface $form_state): MediaBulkUploadForm {
     // If the shared name is empty, remove it from the form state.
     // Otherwise the extractFormValues function will override with an empty value.
     $shared = $form_state->getValue(['fields', 'shared']);
