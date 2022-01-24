@@ -7,5 +7,8 @@
     "issues": "https://www.drupal.org/project/issues/media_bulk_upload",
     "source": "git://git.drupal.org/project/media_bulk_upload.git"
   },
-  "license": "GPL-2.0+"
+  "license": "GPL-2.0+",
+  "require": {
+    "drupal/dropzonejs": "^2.0"
+  }
 }

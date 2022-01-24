@@ -316,6 +316,8 @@ class MediaBulkUploadForm extends FormBase {
     $mediaBulkConfig = $this->mediaBulkConfigStorage->load($mediaBundleConfigId);
     $fileIds = $values['file_upload'];
 
+    \Drupal::moduleHandler()->alter('media_bulk_upload_file_ids', $fileIds, $mediaBundleConfigId);
+
     if (empty($fileIds)) {
       return;
     }

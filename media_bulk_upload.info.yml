@@ -6,7 +6,6 @@ core_version_requirement: ^8 || ^9
 package: Media
 dependencies:
   - drupal:media
-  - drupal:dropzonejs
 configure: entity.media_bulk_config.collection
 
 # Information added by Drupal.org packaging script on 2020-06-16
