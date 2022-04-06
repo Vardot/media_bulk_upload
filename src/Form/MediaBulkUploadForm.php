@@ -102,7 +102,6 @@ class MediaBulkUploadForm extends FormBase {
     $this->mediaBulkConfigStorage = $entityTypeManager->getStorage('media_bulk_config');
     $this->mediaStorage = $entityTypeManager->getStorage('media');
     $this->fileStorage = $entityTypeManager->getStorage('file');
-    $this->maxFileSizeForm = Environment::getUploadMaxSize();
     $this->mediaSubFormManager = $mediaSubFormManager;
     $this->currentUser = $currentUser;
     $this->messenger = $messenger;
@@ -165,14 +164,14 @@ class MediaBulkUploadForm extends FormBase {
       $this->addAllowedExtensions($extensions);
 
       $maxFileSize = $mediaTypeManager->getTargetFieldMaxSize($mediaType);
-      if (empty($maxFileSize)) {
-        $maxFileSize = $this->mediaSubFormManager->getDefaultMaxFileSize();
-      }
-
       $mediaTypeLabels[] = $mediaType->label() . ' (max ' . $maxFileSize . '): ' . implode(', ', $extensions);
-      if ($this->isMaxFileSizeLarger($maxFileSize)) {
+      if (!empty($maxFileSize) && $this->isMaxFileSizeLarger($maxFileSize)) {
         $this->setMaxFileSizeForm($maxFileSize);
       }
+    }
+
+    if (empty($this->maxFileSizeForm)) {
+      $this->maxFileSizeForm = $this->mediaSubFormManager->getDefaultMaxFileSize();
     }
 
     $form['#tree'] = TRUE;
