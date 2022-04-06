@@ -6,6 +6,7 @@ use Drupal\Component\Utility\Bytes;
 use Drupal\Component\Utility\Environment;
 use Drupal\Core\Entity\EntityStorageException;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\File\Exception\FileException;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -483,12 +484,11 @@ class MediaBulkUploadForm extends FormBase {
 
     try {
       $fileEntity->save();
+      $this->fileRepository->move($fileEntity, $destination, FileSystemInterface::EXISTS_RENAME);
     }
-    catch (EntityStorageException $e) {
+    catch (EntityStorageException | FileException $e) {
       $this->messenger()->addError($this->t('File :filename could not be created.', [':filename' => $filename]), 'error');
     }
-
-    $this->fileRepository->move($fileEntity, $destination, FileSystemInterface::EXISTS_RENAME);
 
     $values = $this->getNewMediaValues($mediaType, $fileInfo, $fileEntity);
     /** @var \Drupal\media\MediaInterface $media */
