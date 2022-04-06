@@ -201,13 +201,10 @@ class MediaBulkUploadForm extends FormBase {
 
     $form['information_wrapper']['warning'] = [
       '#type' => 'html_tag',
-      '#tag' => 'span',
+      '#tag' => 'p',
       '#id' => 'media_bulk_upload_information',
       '#name' => 'media_bulk_upload_information',
-      '#value' => '<p>Please be
-        aware that if file extensions overlap between the media types that are
-        available in this upload form, that the media entity will be assigned
-        automatically to one of these types.</p>',
+      '#value' => $this->t('Please be aware that if file extensions overlap between the media types that are available in this upload form, that the media entity will be assigned automatically to one of these types.'),
     ];
 
     $form['dropzonejs'] = [
