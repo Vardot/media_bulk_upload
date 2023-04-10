@@ -231,7 +231,7 @@ class MediaBulkUploadForm extends FormBase {
       '#multiple' => TRUE,
       '#title' => $this->t('File Upload'),
       '#required' => TRUE,
-      '#description' => $this->t('Click or drop your files here'),
+      '#description' => $this->t('Click or drop your files here. You can upload up to <strong>@limit</strong> files at once.', ['@limit' => ini_get('max_file_uploads')]),
       '#upload_validators' => $validators,
       '#upload_location' => $mediaBulkConfig->get('upload_location'),
     ];
