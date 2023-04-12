@@ -637,10 +637,37 @@ class MediaBulkUploadForm extends FormBase {
    * {@inheritdoc}
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
+    // Validate all uploaded files.
     $uploaded_files = $form_state->getValue(['file_upload', 'uploaded_files']);
     if (empty($uploaded_files)) {
       $form_state->setErrorByName('file_upload', $this->t('No media files have been provided.'));
-      return;
+    }
+    else {
+      foreach ($uploaded_files as $uploaded_file) {
+        // Create a new file entity since some modules only validate new files.
+        $file = $this->fileStorage->create([
+          'uri' => $uploaded_file['path']
+        ]);
+
+        // Let other modules perform validation on the new file.
+        $errors = \Drupal::moduleHandler()->invokeAll('file_validate', [
+          $file
+        ]);
+
+        // Process any reported errors.
+        if (!empty($errors)) {
+          $form_state->setErrorByName('file_upload', 'Errors for file ' . $file->getFilename() . ': ' . implode(', ', $errors));
+
+          try {
+            // Delete the uploaded file if it has validation errors.
+            $file_system = \Drupal::service('file_system');
+            $file_system->delete($uploaded_file['path']);
+          }
+          catch (Exception $e) {
+            watchdog_exception('media_bulk_upload', $e);
+          }
+        }
+      }
     }
   }
 
