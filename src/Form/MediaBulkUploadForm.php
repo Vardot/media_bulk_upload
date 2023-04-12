@@ -11,6 +11,7 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\file\Entity\File;
 use Drupal\file\FileInterface;
 use Drupal\file\FileRepositoryInterface;
 use Drupal\media\MediaInterface;
@@ -483,6 +484,14 @@ class MediaBulkUploadForm extends FormBase {
       throw new Exception("File $filename exceeds the maximum file size of $fileSizeSetting for media type $mediaTypeLabel exceeded.");
     }
 
+    if ($mediaType->getSource()->getPluginId() == 'image') {
+      $errors = $this->validateImageResolution($mediaType, $file);
+      if (!empty($errors)) {
+        $this->messenger()->addError($this->t('File :filename has image resolution errors. Check the logs for more details.', [':filename' => $filename]));
+        throw new \Exception('File image resolution errors: ' . implode(', ', $errors));
+      }
+    }
+
     $uri_scheme = $this->mediaSubFormManager->getTargetFieldDirectory($mediaType);
     $destination = $uri_scheme . '/' . $file->getFilename();
     $file_default_scheme = Drupal::config('system.file')->get('default_scheme') . '://';
@@ -535,6 +544,30 @@ class MediaBulkUploadForm extends FormBase {
     }
 
     return $fileSize <= $maxFileSize;
+  }
+
+  /**
+   * Validates the resolution of an image.
+   *
+   * @param \Drupal\media\MediaTypeInterface $mediaType
+   *   The media type entity.
+   * @param \Drupal\file\FileInterface $file
+   *   The file entity.
+   *
+   * @return array
+   *   Array of errors provided by file_validate_image_resolution.
+   */
+  protected function validateImageResolution(MediaTypeInterface $mediaType, FileInterface $file) : array {
+    $field_settings = $this->mediaSubFormManager
+      ->getMediaTypeManager()
+      ->getTargetFieldSettings($mediaType);
+    $errors = file_validate_image_resolution(
+      File::create(['uri' => $file->getFileUri()]),
+      $field_settings['max_resolution'] ?? 0,
+      $field_settings['min_resolution'] ?? 0
+    );
+
+    return $errors;
   }
 
   /**
