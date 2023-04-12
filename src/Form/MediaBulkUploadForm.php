@@ -114,6 +114,7 @@ class MediaBulkUploadForm extends FormBase {
     $this->currentUser = $currentUser;
     $this->messenger = $messenger;
     $this->fileRepository = $fileRepository;
+    $this->maxFileSizeForm = '';
   }
 
   /**
