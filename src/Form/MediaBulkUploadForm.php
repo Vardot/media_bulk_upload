@@ -599,4 +599,19 @@ class MediaBulkUploadForm extends FormBase {
     }
     return $this;
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    // When using dropzonejs, check at least one file was provided.
+    if (\Drupal::service('module_handler')->moduleExists('media_bulk_upload_dropzonejs')) {
+      $dropzonejs = $form_state->getValue('dropzonejs');
+      if (empty($dropzonejs['uploaded_files'])) {
+        $form_state->setErrorByName('dropzonejs', $this->t('No media files have been provided.'));
+        return;
+      }
+    }
+  }
+
 }
