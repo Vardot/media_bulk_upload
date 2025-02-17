@@ -2,6 +2,9 @@
 
 namespace Drupal\media_bulk_upload;
 
+
+use Drupal\Component\Utility\DeprecationHelper;
+use Drupal\Core\StringTranslation\ByteSizeMarkup;
 use Drupal\Component\Utility\Environment;
 use Drupal\Core\Entity\EntityFieldManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -142,7 +145,7 @@ class MediaTypeManager implements MediaTypeManagerInterface {
   public function getTargetFieldMaxSize(MediaTypeInterface $mediaType) {
     $targetFieldSettings = $this->getTargetFieldSettings($mediaType);
 
-    return !empty($targetFieldSettings['max_filesize']) ? $targetFieldSettings['max_filesize'] : (string) format_size(Environment::getUploadMaxSize());
+    return !empty($targetFieldSettings['max_filesize']) ? $targetFieldSettings['max_filesize'] : ByteSizeMarkup::create(Environment::getUploadMaxSize());
   }
 
   /**

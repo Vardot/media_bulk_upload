@@ -1,9 +1,13 @@
 name: 'Media Bulk Upload: DropzoneJS'
 type: module
 description: Allows DropzoneJS integration with media bulk upload.
-core: 8.x
-core_version_requirement: ^8 || ^9 || ^10
+core_version_requirement: ~11
 package: Media
 dependencies:
   - media_bulk_upload
   - dropzonejs
+
+# Information added by Vardot on 2025-02-17
+version: 3.1.x-dev
+project: 'media_bulk_upload_dropzonejs'
+datestamp: 1739795205

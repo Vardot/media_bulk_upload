@@ -6,14 +6,17 @@ use Drupal;
 use Drupal\Component\Utility\Bytes;
 use Drupal\Component\Utility\Environment;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\File\FileExists;
 use Drupal\Core\File\FileSystemInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Utility\Error;
 use Drupal\file\Entity\File;
 use Drupal\file\FileInterface;
 use Drupal\file\FileRepositoryInterface;
+use Drupal\file\Validation\FileValidatorInterface;
 use Drupal\media\MediaInterface;
 use Drupal\media\MediaTypeInterface;
 use Drupal\media_bulk_upload\Entity\MediaBulkConfigInterface;
@@ -55,6 +58,13 @@ class MediaBulkUploadForm extends FormBase {
    * @var \Drupal\file\FileStorageInterface
    */
   protected $fileStorage;
+
+  /**
+   * The file validation service.
+   *
+   * @var \Drupal\file\Validation\FileValidatorInterface
+   */
+  protected $fileValidator;
 
   /**
    * Media SubForm Manager.
@@ -102,11 +112,13 @@ class MediaBulkUploadForm extends FormBase {
    *   Current User.
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   The messenger.
+   * @param \Drupal\file\Validation\FileValidatorInterface $validator
+   *   File validation service.
    *
    * @throws \Drupal\Component\Plugin\Exception\InvalidPluginDefinitionException
    * @throws \Drupal\Component\Plugin\Exception\PluginNotFoundException
    */
-  public function __construct(EntityTypeManagerInterface $entityTypeManager, MediaSubFormManager $mediaSubFormManager, AccountProxyInterface $currentUser, MessengerInterface $messenger, FileRepositoryInterface $fileRepository) {
+  public function __construct(EntityTypeManagerInterface $entityTypeManager, MediaSubFormManager $mediaSubFormManager, AccountProxyInterface $currentUser, MessengerInterface $messenger, FileRepositoryInterface $fileRepository, FileValidatorInterface $validator) {
     $this->mediaTypeStorage = $entityTypeManager->getStorage('media_type');
     $this->mediaBulkConfigStorage = $entityTypeManager->getStorage('media_bulk_config');
     $this->mediaStorage = $entityTypeManager->getStorage('media');
@@ -130,7 +142,8 @@ class MediaBulkUploadForm extends FormBase {
       $container->get('media_bulk_upload.subform_manager'),
       $container->get('current_user'),
       $container->get('messenger'),
-      $container->get('file.repository')
+      $container->get('file.repository'),
+      $container->get('file.validator')
     );
   }
 
@@ -405,7 +418,13 @@ class MediaBulkUploadForm extends FormBase {
         ]
       );
     } catch (Exception $e) {
-      watchdog_exception('media_bulk_upload', $e);
+      if (method_exists(Error::class, 'logException')) {
+        Error::logException($this->getLogger('media_bulk_upload'), $e);
+      }
+      else {
+        // @phpstan-ignore-next-line
+        watchdog_exception('media_bulk_upload', $e);
+      }
     }
   }
 
@@ -499,7 +518,7 @@ class MediaBulkUploadForm extends FormBase {
       $destination = $uri_scheme . $file->getFilename();
     }
 
-    if (!$this->fileRepository->move($file, $destination, FileSystemInterface::EXISTS_RENAME)) {
+    if (!$this->fileRepository->move($file, $destination, FileExists::Rename)) {
       $this->messenger()->addError($this->t('File :filename could not be moved.', [':filename' => $filename]), 'error');
       throw new Exception('File entity could not be moved.');
     }
@@ -555,17 +574,27 @@ class MediaBulkUploadForm extends FormBase {
    *   The file entity.
    *
    * @return array
-   *   Array of errors provided by file_validate_image_resolution.
+   *   Array of errors provided by fileValidator->validate.
    */
   protected function validateImageResolution(MediaTypeInterface $mediaType, FileInterface $file) : array {
     $field_settings = $this->mediaSubFormManager
       ->getMediaTypeManager()
       ->getTargetFieldSettings($mediaType);
-    $errors = file_validate_image_resolution(
+
+      $violations = $this->fileValidator->validate(
       File::create(['uri' => $file->getFileUri()]),
-      $field_settings['max_resolution'] ?? 0,
-      $field_settings['min_resolution'] ?? 0
+      [
+        'FileImageDimensions' =>
+          [
+            'maxDimensions' => $field_settings['max_resolution'] ?? 0,
+            'minDimensions' => $field_settings['min_resolution'] ?? 0,
+          ],
+      ],
     );
+    $errors = [];
+    foreach ($violations as $violation) {
+      $errors[] = $violation->getMessage();
+    }
 
     return $errors;
   }
@@ -664,7 +693,13 @@ class MediaBulkUploadForm extends FormBase {
             $file_system->delete($uploaded_file['path']);
           }
           catch (Exception $e) {
-            watchdog_exception('media_bulk_upload', $e);
+            if (method_exists(Error::class, 'logException')) {
+              Error::logException($this->getLogger('media_bulk_upload'), $e);
+            }
+            else {
+              // @phpstan-ignore-next-line
+              watchdog_exception('media_bulk_upload', $e);
+            }
           }
         }
       }
