@@ -8,6 +8,6 @@ dependencies:
 configure: entity.media_bulk_config.collection
 
 # Information added by Vardot on 2025-02-17
-version: 3.1.0
+version: 3.1.x-dev
 project: 'media_bulk_upload'
-datestamp: 1739796525
+datestamp: 1739796683
